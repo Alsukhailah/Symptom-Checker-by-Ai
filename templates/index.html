@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Symptom Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f3f4f6; font-family: 'Segoe UI', sans-serif; }
+        .slide-container { -webkit-appearance: none; width: 100%; height: 8px; border-radius: 5px; background: #d3d3d3; outline: none; }
+        .slide-container::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #3b82f6; cursor: pointer; }
+        .recording-pulse { animation: pulse-red 1.5s infinite; color: red; }
+        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        .playing-shadow { box-shadow: 0 0 15px rgba(99, 102, 241, 0.5); border-color: #6366f1; }
+        .bar { width: 3px; background: #6366f1; animation: equalizer 1s infinite; }
+        @keyframes equalizer { 0% { height: 5px; } 50% { height: 15px; } 100% { height: 5px; } }
+    </style>
+</head>
+<body class="flex justify-center items-start min-h-screen py-8">
+
+    <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-xl border border-gray-100 relative min-h-[850px]">
+        
+        <div class="bg-white p-6 pb-2 text-center border-b border-gray-50">
+            <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg text-white text-2xl">
+                <i class="fa-solid fa-heart-pulse"></i>
+            </div>
+            <h1 class="text-xl font-bold text-blue-900">AI Symptom Checker</h1>
+            <p class="text-xs text-gray-500 mt-1 mb-4">Describe your symptoms and get AI-powered health insights</p>
+
+            <div id="audioCard" class="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl p-4 text-left flex items-center gap-4 transition-all duration-300">
+                
+                <button onclick="toggleEducationalAudio()" id="eduPlayBtn" class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-md hover:bg-indigo-700 transition flex-shrink-0">
+                    <i id="eduIcon" class="fa-solid fa-play ml-1"></i>
+                </button>
+
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] font-bold text-indigo-500 tracking-wider uppercase">Educational Message</span>
+                        <div id="visualizer" class="flex gap-1 h-4 items-end opacity-0 transition-opacity">
+                            <div class="bar" style="animation-delay: 0s"></div>
+                            <div class="bar" style="animation-delay: 0.2s"></div>
+                            <div class="bar" style="animation-delay: 0.4s"></div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-sm font-bold text-gray-800 leading-tight">Hear the Change</h3>
+                    <p class="text-[10px] text-gray-500 mt-1 leading-snug">
+                        Discover how AI technology is transforming the future of medical diagnosis. Click to listen.
+                    </p>
+                </div>
+
+                <audio id="eduAudio" src="/static/Educational-Message.mp3"></audio>
+            </div>
+            </div>
+
+        <div id="inputPage" class="p-6 space-y-5">
+            
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">What are you experiencing?</label>
+                <textarea id="symptomsInput" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none" placeholder="Describe your main symptom in detail..."></textarea>
+                <button id="voiceBtn" onclick="toggleVoiceInput()" class="mt-2 w-full border border-gray-300 rounded-lg py-2 text-sm text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 transition">
+                    <i class="fa-solid fa-microphone"></i> <span>Use Voice Input</span>
+                </button>
+            </div>
+
+            <div>
+                <div class="flex justify-between text-sm font-bold text-gray-700 mb-2">
+                    <span>Severity (1-10)</span>
+                    <span id="severityDisplay" class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded">5</span>
+                </div>
+                <input type="range" min="1" max="10" value="5" id="severityInput" class="slide-container" oninput="document.getElementById('severityDisplay').innerText = this.value">
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Duration</label>
+                <select id="durationInput" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm outline-none"><option>Less than 24 hours</option><option>1-3 days</option><option>1 week</option><option>More than a month</option></select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Associated Symptoms</label>
+                <div class="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                    <label class="flex items-center gap-2"><input type="checkbox" value="Fever" class="assoc-symptom"> Fever</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" value="Headache" class="assoc-symptom"> Headache</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" value="Nausea" class="assoc-symptom"> Nausea</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" value="Fatigue" class="assoc-symptom"> Fatigue</label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Medical History</label>
+                <select id="historyInput" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm outline-none"><option value="None">None</option><option value="Diabetes">Diabetes</option><option value="Hypertension">Hypertension</option><option value="Asthma">Asthma</option></select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Current Medications</label>
+                <input type="text" id="medsInput" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm outline-none" placeholder="List medications...">
+            </div>
+
+            <div class="bg-blue-50 p-3 rounded-lg flex gap-3 items-start border border-blue-100">
+                <i class="fa-solid fa-triangle-exclamation text-blue-500 mt-1 text-xs"></i>
+                <p class="text-[10px] text-gray-600 leading-tight">AI provides guidance only. For emergencies, call services immediately.</p>
+            </div>
+
+            <button onclick="sendToPython()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-file-medical"></i> Analyze Symptoms
+            </button>
+        </div>
+
+        <div id="resultsPage" class="hidden p-6 space-y-5 bg-gray-50 min-h-full">
+            <div class="bg-blue-100 border-l-4 border-blue-600 p-3 rounded-r-lg">
+                <div class="flex items-center gap-2 text-blue-800 font-bold text-sm"><i class="fa-solid fa-circle-info"></i> AI Confidence: High</div>
+                <p class="text-[10px] text-blue-600 mt-1">Based on clinical guidelines.</p>
+            </div>
+
+            <div>
+                <h3 class="text-blue-800 font-semibold text-sm mb-3">Possible Conditions</h3>
+                <div id="conditionsList" class="space-y-3"></div>
+            </div>
+
+            <div>
+                <h3 class="text-blue-800 font-semibold text-sm mb-3">Next Steps</h3>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100"><ul id="stepsList" class="space-y-3 text-xs text-gray-700"></ul></div>
+            </div>
+
+            <div>
+                <h3 class="text-blue-800 font-semibold text-sm mb-3">Clinical Notes</h3>
+                <div id="clinicalNote" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-xs text-gray-600 leading-relaxed"></div>
+            </div>
+
+             <div class="bg-red-50 border border-red-100 p-4 rounded-xl">
+                <div class="flex items-center gap-2 text-red-600 font-bold text-xs mb-2"><i class="fa-solid fa-triangle-exclamation"></i> Emergency Signs:</div>
+                <ul class="list-disc list-inside text-[10px] text-red-500 space-y-1"><li>Difficulty breathing</li><li>Chest pain</li><li>Severe confusion</li></ul>
+            </div>
+
+            <div class="space-y-2 pt-2">
+                <a href="tel:911" class="w-full bg-red-100 text-red-600 border border-red-200 font-bold py-3 rounded-xl shadow-sm flex items-center justify-center gap-2 text-sm">
+                    <i class="fa-solid fa-phone-volume"></i> Call Emergency (911)
+                </a>
+                <button onclick="downloadReport()" class="w-full bg-white border border-blue-300 text-blue-700 font-bold py-3 rounded-xl shadow-sm hover:bg-blue-50 text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> Save Results
+                </button>
+                <button onclick="location.reload()" class="w-full text-gray-400 text-xs py-2 hover:text-gray-600">Check Another Case</button>
+            </div>
+        </div>
+
+        <div id="loadingState" class="hidden absolute inset-0 bg-white/95 z-50 flex flex-col items-center justify-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mb-4"></div>
+            <p class="text-blue-800 font-semibold animate-pulse">Analyzing...</p>
+        </div>
+    </div>
+
+    <script>
+
+        let isEduPlaying = false;
+        
+        function toggleEducationalAudio() {
+            const audio = document.getElementById('eduAudio');
+            const btn = document.getElementById('eduPlayBtn');
+            const icon = document.getElementById('eduIcon');
+            const card = document.getElementById('audioCard');
+            const visualizer = document.getElementById('visualizer');
+
+            if (isEduPlaying) {
+                audio.pause();
+                isEduPlaying = false;
+                icon.className = "fa-solid fa-play ml-1";
+                card.classList.remove('playing-shadow');
+                visualizer.style.opacity = "0";
+            } else {
+                audio.play().catch(e => alert("Please add 'change.mp3' to the static folder first!"));
+                isEduPlaying = true;
+                icon.className = "fa-solid fa-pause";
+                card.classList.add('playing-shadow');
+                visualizer.style.opacity = "1";
+
+                audio.onended = function() {
+                    isEduPlaying = false;
+                    icon.className = "fa-solid fa-play ml-1";
+                    card.classList.remove('playing-shadow');
+                    visualizer.style.opacity = "0";
+                };
+            }
+        }
+
+        let recognition;
+        function toggleVoiceInput() {
+            if (!('webkitSpeechRecognition' in window)) return alert("Use Chrome for voice input.");
+            const btn = document.getElementById('voiceBtn');
+            const icon = btn.querySelector('i');
+            const text = btn.querySelector('span');
+            if (recognition && recognition.started) { recognition.stop(); return; }
+            recognition = new webkitSpeechRecognition();
+            recognition.lang = "en-US";
+            recognition.onstart = () => { recognition.started = true; icon.className = "fa-solid fa-circle recording-pulse"; text.innerText = "Listening..."; btn.classList.add('border-red-500', 'text-red-500'); };
+            recognition.onend = () => { recognition.started = false; icon.className = "fa-solid fa-microphone"; text.innerText = "Use Voice Input"; btn.classList.remove('border-red-500', 'text-red-500'); };
+            recognition.onresult = (e) => { const t = e.results[0][0].transcript; const i = document.getElementById('symptomsInput'); i.value = i.value ? i.value + " " + t : t; };
+            recognition.start();
+        }
+
+        async function sendToPython() {
+            const sym = document.getElementById('symptomsInput').value;
+            if (!sym) return alert("Please describe symptoms.");
+            document.getElementById('loadingState').classList.remove('hidden');
+
+            const payload = {
+                symptoms: sym, severity: document.getElementById('severityInput').value,
+                duration: document.getElementById('durationInput').value, history: document.getElementById('historyInput').value,
+                meds: document.getElementById('medsInput').value, associated: Array.from(document.querySelectorAll('.assoc-symptom:checked')).map(c => c.value)
+            };
+
+            try {
+                const res = await fetch('/analyze', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                const data = await res.json();
+                if(data.error) alert(data.error); else renderResults(data);
+            } catch(e) { alert("Error connecting"); }
+            finally { document.getElementById('loadingState').classList.add('hidden'); }
+        }
+
+        function renderResults(data) {
+            document.getElementById('inputPage').classList.add('hidden');
+            document.getElementById('resultsPage').classList.remove('hidden');
+            window.scrollTo(0,0);
+            
+            const list = document.getElementById('conditionsList'); list.innerHTML = '';
+            data.conditions.forEach(c => {
+                let color = c.color=='red'?'bg-red-500':c.color=='yellow'?'bg-yellow-500':'bg-green-500';
+                list.innerHTML += `<div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-2"><div class="flex justify-between mb-2"><div><h4 class="font-bold text-gray-800">${c.name}</h4><p class="text-xs text-gray-500">Prob: ${c.prob}%</p></div></div><div class="w-full bg-gray-200 h-1.5 rounded-full"><div class="${color} h-1.5 rounded-full" style="width:${c.prob}%"></div></div></div>`;
+            });
+            document.getElementById('stepsList').innerHTML = data.steps.map(s => `<li class="flex gap-2"><i class="fa-solid fa-check text-green-500"></i> ${s}</li>`).join('');
+            document.getElementById('clinicalNote').innerText = data.note;
+        }
+
+        function downloadReport() {
+            const txt = `REPORT\nDate: ${new Date().toLocaleString()}\n\n${document.getElementById('clinicalNote').innerText}`;
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'}));
+            a.download = 'Report.txt'; a.click();
+        }
+    </script>
+</body>
+</html>
